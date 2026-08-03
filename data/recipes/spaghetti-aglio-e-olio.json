@@ -1,0 +1,17 @@
+{
+  "id": "spaghetti-aglio-e-olio",
+  "name": "Spaghetti Aglio e Olio",
+  "servings": 4,
+  "mealType": "dinner",
+  "sourceUrl": null,
+  "noRecipe": false,
+  "ingredients": [
+    { "name": "spaghetti", "amount": 1, "unit": "lb" },
+    { "name": "olive oil", "amount": 0.33, "unit": "cup" },
+    { "name": "garlic", "amount": 6, "unit": "clove" },
+    { "name": "red pepper flakes", "amount": 0.5, "unit": "tsp" }
+  ],
+  "steps": ["Boil pasta.", "Sizzle garlic in oil.", "Toss and serve."],
+  "createdAt": "2026-08-01",
+  "updatedAt": "2026-08-01"
+}

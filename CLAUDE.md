@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Stage 0 (environment/toolchain setup) is scaffolded and passing. No application logic exists yet — no recipes, grocery-list building, pantry, or repeating-item logic. The full staged build plan and current stage is tracked in `spec/tech-spec.md` §6; work proceeds stage by stage from there.
+Stage 1 (MVP tracer bullet) is complete: recipes load from `data/recipes/*.json`, `build-grocery-list.ts` merges their ingredients (exact name+unit dedup only) and reports dinner-coverage against eaters/dinners needed. No skill, pantry, repeating items, scaling, or unit conversion yet. The full staged build plan and current stage is tracked in `spec/tech-spec.md` §6; work proceeds stage by stage from there.
 
 ## Implementation approach
 

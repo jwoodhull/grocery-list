@@ -177,8 +177,8 @@ This is the core architectural decision, made explicit function by function.
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `csv.ts`                               | Generic typed CSV read/write via `csv-parse`/`csv-stringify`                                                                                                                                                                                 |
 | `pantryStore.ts` / `repeatingStore.ts` | Typed load/save wrappers around `csv.ts` for the pantry/repeating schemas, including upsert-by-normalized-name                                                                                                                               |
-| `recipes.ts`                           | `loadRecipe(id)`, `loadAllRecipes()`, `saveRecipe(recipe)`, `slugify(name)`                                                                                                                                                                  |
-| `servings.ts`                          | `computeCoverage(plannedMeals, dinnersNeeded, eatersPerDinner)` → per-slot under/over/exact status                                                                                                                                           |
+| `recipes.ts`                           | `loadRecipe(id)`, `loadAllRecipes()` (sorted by `id`), `saveRecipe(recipe)` (not yet built — added in Stage 2, when the skill first needs to persist a parsed recipe), `slugify(name)`. Throws `RecipeNotFoundError` / `RecipeLoadError` (invalid JSON, or a file's internal `id` not matching its filename) rather than returning null — callers can trust a returned `Recipe` is well-formed                          |
+| `servings.ts`                          | `computeCoverage(plannedMeals, dinnersNeeded, eatersPerDinner)` → `CoverageResult`, detailed under Stage 1 in §6 (per-slot `under/exact/over` status, multi-night aggregation via `nightsCovered`, rollup totals). Throws `RangeError` for non-positive `eatersPerDinner` or negative `dinnersNeeded`                                     |
 | `scaling.ts`                           | `scaleRecipe(recipe, factor)` (multiplies ingredient amounts), `determineScaleFactor(recipeServings, neededServings)` (suggests a multiplier)                                                                                                |
 | `units.ts`                             | Conversion tables for a volume family (tsp/tbsp/cup/pint/quart/gallon) and a weight family (oz/lb); `toBase`/`fromBase` plus a sensible display-unit picker. Count/other units are never converted, only exact-matched                       |
 | `grocery-list.ts`                      | `mergeIngredients(lists)` — normalized-name dedup; same-unit-family amounts are converted to a common base and summed via `units.ts`; different families or unconvertible units are kept as separate line items rather than guessed together |
@@ -237,10 +237,18 @@ Every stage ends with Vitest unit tests plus an explicit manual verification ste
 - Verify: `npm install && npm test` is green; `npx tsx src/cli/hello.ts --a 2 --b 3` prints valid JSON with the expected result.
 - Exit criteria: toolchain fully functional with zero application logic yet.
 
-**Stage 1 — MVP tracer bullet**
+**Stage 1 — MVP tracer bullet — ✅ Complete**
 
-- Build: `types/index.ts` (Recipe, Ingredient), `recipes.ts` (load/list), 2–3 hand-written sample recipes under `data/recipes/`, `servings.ts` (`computeCoverage`), `grocery-list.ts` (`mergeIngredients`, exact-unit merge only at this stage), a `build-grocery-list.ts` CLI taking recipe ids + eaters/dinners and printing the deduped list + coverage summary. No skill, no pantry, no repeating, no scaling, no unit conversion yet.
-- Tests: `mergeIngredients` (same name+unit sums; different units kept separate; case/whitespace normalization), `computeCoverage` (under/over/exact), recipe loading from fixture files.
+- Build: `types/index.ts` (`Recipe`, `Ingredient`, `MealType`), `recipes.ts` (`loadRecipe`, `loadAllRecipes`, `slugify`), 3 hand-written sample recipes under `data/recipes/` (`chicken-tacos`, `spaghetti-aglio-e-olio`, `grilled-salmon` — the latter exercising the `noRecipe: true` shape), `servings.ts` (`computeCoverage`), `grocery-list.ts` (`mergeIngredients`, exact-name+exact-unit merge only at this stage), a `build-grocery-list.ts` CLI taking `--recipe <id>` (repeatable), `--dinners`, `--eaters` and printing one JSON object. No skill, no pantry, no repeating, no scaling, no unit conversion yet.
+- **CLI contract** (`build-grocery-list.ts`) — the exact shape Stage 2's `SKILL.md` will read from the Bash tool, and that Stages 4/6 extend rather than replace:
+  ```json
+  { "recipes": [{ "id": "...", "name": "...", "servings": 4 }],
+    "coverage": { "dinnersNeeded": 6, "eatersPerDinner": 2, "slots": [ /* MealSlotCoverage[] */ ],
+                  "dinnersPlanned": 5, "dinnersRemaining": 1, "isFullyCovered": false },
+    "groceryList": [ /* Ingredient[] */ ] }
+  ```
+  Each `MealSlotCoverage` carries `status: "under" | "exact" | "over"` (relative to `eatersPerDinner`) plus `nightsCovered = floor(servings / eatersPerDinner)` — a recipe serving more than `eatersPerDinner` counts toward multiple dinner slots (e.g. an 8-serving recipe against 2 eaters/dinner covers 4 nights). `dinnersPlanned` sums `nightsCovered` across slots rather than counting recipes 1:1; this is the aggregate the skill's coverage-tracking loop (§5 step 3) checks against `dinnersNeeded`.
+- Tests: `mergeIngredients` (same name+unit sums; different units kept separate; case/whitespace normalization), `computeCoverage` (under/exact/over, multi-night aggregation, `RangeError` edge cases), recipe loading from fixture files (including id/filename-mismatch and invalid-JSON error paths, which surface as `RecipeLoadError`/`RecipeNotFoundError`).
 - Verify: run the CLI against the sample recipes; hand-verify the deduped output.
 - Exit criteria: the core "plan meals → deduped list" loop works end to end with real data.
 
@@ -281,7 +289,7 @@ Every stage ends with Vitest unit tests plus an explicit manual verification ste
 
 **Stage 7 — Pantry cross-check**
 
-- Build: `pantryStore.ts`, `pantry.ts` (`matchAgainstPantry` — exact/partial/none tiers), `check-pantry.ts` CLI.
+- Build: `pantryStore.ts`, `pantry.ts` (`matchAgainstPantry` — exact/partial/none tiers), `check-pantry.ts` CLI. `pantry.ts` needs the same "lowercased, trimmed, whitespace-collapsed" name normalization already implemented as the private `normalizeName` helper in `grocery-list.ts` (Stage 1) — extract it into a shared util (e.g. `src/lib/normalize.ts`) at this point rather than duplicating it. Keep `slugify` (recipes.ts) separate: it strips punctuation and hyphenates for id/filename generation, a different operation that happens to share a couple of chained string methods.
 - Tests: exact match, case/whitespace-insensitive match, partial/substring tier, no match; pantry CSV round-trip.
 - Verify: seed `pantry.csv` with overlapping items, confirm correct tier annotations without items being silently removed.
 - Exit criteria: pantry annotations are correct and non-destructive.

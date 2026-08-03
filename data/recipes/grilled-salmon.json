@@ -1,0 +1,16 @@
+{
+  "id": "grilled-salmon",
+  "name": "Grilled Salmon, no recipe needed",
+  "servings": 2,
+  "mealType": "dinner",
+  "sourceUrl": null,
+  "noRecipe": true,
+  "ingredients": [
+    { "name": "salmon fillets", "amount": 2, "unit": "count" },
+    { "name": "olive oil", "amount": 1, "unit": "tbsp" },
+    { "name": "lemon", "amount": 1, "unit": "count" }
+  ],
+  "steps": [],
+  "createdAt": "2026-08-01",
+  "updatedAt": "2026-08-01"
+}

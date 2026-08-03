@@ -1,0 +1,15 @@
+{
+  "id": "chicken-tacos",
+  "name": "Chicken Tacos",
+  "servings": 4,
+  "mealType": "dinner",
+  "sourceUrl": null,
+  "noRecipe": false,
+  "ingredients": [
+    { "name": "chicken thighs", "amount": 1.5, "unit": "lb" },
+    { "name": "taco shells", "amount": 8, "unit": "count" }
+  ],
+  "steps": ["Season and grill chicken.", "Warm shells.", "Assemble."],
+  "createdAt": "2026-08-01",
+  "updatedAt": "2026-08-01"
+}
