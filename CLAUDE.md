@@ -4,11 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-This repository is pre-implementation. It currently contains only a product spec (`spec/grocery-list-spec.md`) and an empty `src/` directory — no build system, dependencies, or tests exist yet. There are no commands to run until an implementation approach is chosen and scaffolded.
+Stage 0 (environment/toolchain setup) is scaffolded and passing. No application logic exists yet — no recipes, grocery-list building, pantry, or repeating-item logic. The full staged build plan and current stage is tracked in `spec/tech-spec.md` §6; work proceeds stage by stage from there.
+
+## Implementation approach
+
+Decided (see `spec/tech-spec.md` for the full rationale, schemas, and module boundaries): a **Claude Code skill** (`.claude/skills/plan-week/`, not yet built) backed by deterministic, unit-tested TypeScript under `/src`. Judgment calls (recipe-text parsing, conversational flow, HTML artifact composition) stay in the skill's `SKILL.md`; deterministic logic (dedup, scaling, unit conversion, cadence math, pantry matching) lives in tested `/src/lib` functions with thin `/src/cli` wrappers. Storage is plain CSV/JSON under `/data` — no database, no server, no auth.
+
+## Commands
+
+- `npm install` — install dependencies
+- `npm test` — run the Vitest suite once (`vitest run`)
+- `npm run test:watch` — Vitest in watch mode
+- `npm run typecheck` — `tsc --noEmit`
+- `npx tsx src/cli/<name>.ts [args]` — run any CLI script directly, no build step (e.g. `npx tsx src/cli/hello.ts --a 2 --b 3`)
+
+Tests are colocated as `*.test.ts` next to the module they cover (e.g. `src/lib/hello.ts` + `src/lib/hello.test.ts`). Every `/src/cli` script prints one JSON object to stdout and exits non-zero with a stderr message on error.
 
 ## What this project is
 
-A weekly meal-plan / grocery-list planner (see `spec/grocery-list-spec.md` for the full spec). The spec explicitly leaves the implementation form open — it could be a standalone script, a Claude skill, or an HTML artifact — so when starting implementation, confirm which form the user wants before scaffolding.
+A weekly meal-plan / grocery-list planner. `spec/grocery-list-spec.md` is the product spec; `spec/tech-spec.md` is the technical spec (architecture, schemas, phased stages) — read the latter before making implementation decisions.
 
 Core workflow described by the spec:
 1. Plan dinners for the week (default 6 dinners, default 2 eaters/dinner), plus optional extra recipes (desserts, breakfasts, lunches).
