@@ -230,7 +230,7 @@ A separate, smaller pantry-review sub-flow (reviewing/editing the pantry indepen
 
 Every stage ends with Vitest unit tests plus an explicit manual verification step, before moving to the next stage.
 
-**Stage 0 — Environment setup**
+**Stage 0 — Environment setup — ✅ Complete**
 
 - Build: `package.json`, `tsconfig.json`, `.gitignore`; a trivial `src/lib/hello.ts` pure function + `hello.test.ts`; a trivial `src/cli/hello.ts` wrapper (using `node:util.parseArgs`) that prints JSON.
 - Tests: Vitest unit test for the trivial function.
