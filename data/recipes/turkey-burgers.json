@@ -1,0 +1,28 @@
+{
+  "id": "turkey-burgers",
+  "name": "Turkey Burgers",
+  "servings": 4,
+  "mealType": "dinner",
+  "sourceUrl": null,
+  "noRecipe": true,
+  "ingredients": [
+    {
+      "name": "ground turkey",
+      "amount": 1.5,
+      "unit": "lb"
+    },
+    {
+      "name": "buns",
+      "amount": 4,
+      "unit": "count"
+    },
+    {
+      "name": "cheddar cheese slices",
+      "amount": 4,
+      "unit": "count"
+    }
+  ],
+  "steps": [],
+  "createdAt": "2026-08-03",
+  "updatedAt": "2026-08-03"
+}

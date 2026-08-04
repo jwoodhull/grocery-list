@@ -1,0 +1,43 @@
+{
+  "id": "shepherds-pie",
+  "name": "Shepherd's Pie",
+  "servings": 4,
+  "mealType": "dinner",
+  "sourceUrl": null,
+  "noRecipe": false,
+  "ingredients": [
+    {
+      "name": "ground lamb",
+      "amount": 1,
+      "unit": "lb"
+    },
+    {
+      "name": "mashed potatoes",
+      "amount": 2,
+      "unit": "cup"
+    },
+    {
+      "name": "peas",
+      "amount": 1,
+      "unit": "cup"
+    },
+    {
+      "name": "onion",
+      "amount": 1,
+      "unit": "count"
+    },
+    {
+      "name": "butter",
+      "amount": 2,
+      "unit": "tbsp"
+    }
+  ],
+  "steps": [
+    "Brown the lamb with onion.",
+    "Layer peas on top.",
+    "Cover with mashed potatoes.",
+    "Bake at 400F for 25 min."
+  ],
+  "createdAt": "2026-08-03",
+  "updatedAt": "2026-08-03"
+}

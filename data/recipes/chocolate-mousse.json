@@ -1,0 +1,28 @@
+{
+  "id": "chocolate-mousse",
+  "name": "Chocolate Mousse",
+  "servings": 6,
+  "mealType": "dessert",
+  "sourceUrl": null,
+  "noRecipe": true,
+  "ingredients": [
+    {
+      "name": "dark chocolate",
+      "amount": 8,
+      "unit": "oz"
+    },
+    {
+      "name": "eggs",
+      "amount": 4,
+      "unit": "count"
+    },
+    {
+      "name": "heavy cream",
+      "amount": 1,
+      "unit": "cup"
+    }
+  ],
+  "steps": [],
+  "createdAt": "2026-08-03",
+  "updatedAt": "2026-08-03"
+}
