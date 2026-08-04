@@ -1,0 +1,84 @@
+● Code review(review · 8 findings)
+✓ src/lib/finalize-lis [correctne — Added requireNonNegativeNumber and used it for groceryList[].amount (matching recipes.ts's non-negative rule), keeping requirePositiveNumber only for mealPlan[].servings.
+✓ .claude/skills/plan-week/S [correctn — Added --dataFile support to finalize-list.ts's CLI and updated SKILL.md step 7 to write the payload to a scratch file and pass it via --dataFile instead of inlining JSON in a single-quoted shell argument.
+✓ src/lib/finalize-list [correctn — groupByCategory's guard now uses a shared isValidCategory(value) type-guard instead of only checking for undefined, so any non-enum category value throws instead of silently filtering the item out of every group.
+✓ src/lib/finalize-list [duplicati — Extracted isNonEmptyString/isFiniteNumber predicates into a new src/lib/validation.ts, used by both recipes.ts and finalize-list.ts, so the two validators can no longer silently drift on the same underlying rules.
+✓ src/cli/build-grocery-li [duplicati — Added a runCli(main) helper to src/cli/util.ts and switched all four CLI scripts (build-grocery-list, save-recipe, load-recipes, finalize-list) to use it instead of each having its own try/catch.
+✓ src/cli/save-recipe [duplicat — Added parseNumberArg(flagName, raw) to src/cli/util.ts and used it in save-recipe.ts (--servings) and build-grocery-list.ts (--dinners/--eaters), replacing the repeated Number()+isFinite guard.
+✓ .claude/skills/plan-week/S [simplificat — SKILL.md step 6 now says to leave isRepeat unset (it's optional and already treated as falsy when absent) instead of instructing Claude to explicitly stamp isRepeat: false on every item.
+✓ .claude/skills/plan-week/ [architect — Rather than building speculative merge/provenance code now (Stage 6 doesn't exist yet and CLAUDE.md's conventions warn against designing for hypothetical future requirements), added an explicit note to tech-spec.md's Stage 6 bullet flagging that it must decide how a due repeating item colliding by name with a recipe ingredient is resolved, so it isn't left as an implicit bandaid when that stage is built.
+
+All 8 findings fixed and verified (typecheck clean, 75/75 tests passing). Summary of changes beyond the original review's scope:
+
+- src/lib/validation.ts (new) — shared isNonEmptyString/isFiniteNumber predicates, now used by both recipes.ts and finalize-list.ts.
+- finalize-list.ts — groceryList[].amount now allows 0 (e.g. "salt, to taste"), matching recipes.ts; groupByCategory now rejects invalid categories instead of silently dropping them.
+- src/cli/util.ts — added runCli and parseNumberArg, deduplicating the try/catch and numeric-parsing boilerplate across all four CLI scripts.
+- finalize-list.ts CLI — added --dataFile <path>; SKILL.md step 7 now writes the payload to a scratch file and passes it that way, sidestepping shell-quoting breakage on names with apostrophes.
+- SKILL.md step 6 — no longer instructs stamping isRt's optional and already falsy when absent).- tech-spec.md Stage 6 — added a note flagging that isions need an explicit resolution rule when thatstage is built, rather than adding speculative mergeCogitated for 5m 7svalidate.ts line 11 both of these validators feel liions we could use from node?Searched for 1 pattern, read 1 fileGood catch on isFiniteNumber — Number.isFinite() (unever coerces its argument, so it already returns falsefor any non-number value (strings, NaN, Infinity, nuf value === "number" check is redundant at runtime;it's only there because Number.isFinite's TS signatuolean, not a type predicate, so it doesn't narrowvalue on its own. We can keep the type predicate butUpdate(src/lib/validation.ts)Added 4 lines, removed 2 lines}/** * True when `value` is a finite number. * True when `value` is a finite number. `Nuobal `isFinite`) never * coerces its argument, so it already rejechis only adds the type * predicate TypeScript needs to narrow `val */export function isFiniteNumber(value: unknow  return typeof value === "number" && Number  return Number.isFinite(value);}isNonEmptyString doesn't have an equivalent — there'ring and non-blank" check, so the typeof there isload-bearing, not redundant. Verifying the change.Ran 1 shell commandClean — typecheck passes and all 75 tests still greelegates to Number.isFinite for the type-predicatenarrowing; isNonEmptyString stays as-is since there'n on.Brewed for 50sI'm seeing changes to recipes.ts that are if logic c edge casesI'm seeing changes to recipes.ts that are if logic c edge casesYou're right to flag that — let me check what actual The refactor in recipes.ts is meant to bebehavior-preserving (delegating to shared predicatest I never added tests proving that, and there's a realgap: ingredient.amount === 0 is accepted by recipes. boundary was never tested, and NaN/Infinity inputsaren't covered either.
+
+  Read 1 file
+
+● Update(src/lib/recipes.test.ts)
+Added 5 lines
+    expect(() => saveRecipe({ ...validInputThrow(RecipeValidationError);
+  });
+
+  it("throws RecipeValidationError for a no
+    expect(() => saveRecipe({ ...validInputoThrow(/servings/);
+    expect(() => saveRecipe({ ...validInput, servings: Infinity }, tmpDir)).toThrow(/servings/);
+  });
+
+  it("throws RecipeValidationError for an i
+    // @ts-expect-error - intentionally inv
+    expect(() => saveRecipe({ ...validInputr)).toThrow(/mealType/);
+
+● Update(src/lib/recipes.test.ts)
+Added 14 lines
+    ).toThrow(/ingredients\[0\]\.amount/);
+  });
+
+  it("throws RecipeValidationError for a non-finite ingredient amount", () => {
+    expect(() =>
+      saveRecipe({ ...validInput, ingredien NaN, unit: "cup" }] }, tmpDir),
+    ).toThrow(/ingredients\[0\]\.amount/);
+  });
+
+  it("accepts a zero ingredient amount (e.g
+    const saved = saveRecipe(
+      { ...validInput, ingredients: [{ nameo taste" }] },
+      tmpDir,
+    );
+    expect(saved.ingredients).toEqual([{ na"to taste" }]);
+  });
+
+  it("throws RecipeValidationError for an i, () => {
+    expect(() =>
+      saveRecipe({ ...validInput, ingredien 1, unit: "" }] }, tmpDir),
+
+Now running the suite to confirm these pass (provinghavior-preserving, which was the actual point).
+
+  Ran 2 shell commands
+
+All 78 tests pass, typecheck clean. Added 3 tests to boundary cases the isFiniteNumber/isNonEmptyString
+refactor touches but weren't previously asserted: noty), non-finite ingredient amount, and the amount ===
+0 boundary (accepted, since the check is < 0 not <=  that would've actually caught a regression, since
+it's the exact boundary where "positive" vs "non-neg
+
+✻ Baked for 1m 6s
+
+❯ I'm wondering if we should use a library for schema validation
+
+For the current scale — two hand-rolled validators, ainst pulling in a library like Zod; it doesn't pay
+for itself yet, and this project's own conventions ( explicitly favor minimal deps and stage-by-stage
+build. The tradeoff worth naming: a schema library wpe from the schema instead of hand-maintaining
+interface + validate* pairs separately, which is exaaused the amount boundary bug (recipes.ts vs.
+finalize-list.ts silently disagreeing). That argumen-8 (pantry, repeating/cadence items) add several morevalidated shapes — worth revisiting then rather than now.
+
+Want me to leave it as-is for this stage, or go ahead and introduce Zod now?
+
+✻ Cooked for 15s
+
+❯ Leave it as-is for now, but add refactor stage to th
+
+  Searched for 1 pattern, read 1 file
+Adding it as a new stage after Stage 10, matching th/Exit-criteria format, framed as conditional onvalidation surface actually growing

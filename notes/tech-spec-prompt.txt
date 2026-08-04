@@ -1,0 +1,32 @@
+# planning the tech spec for grocery list
+
+The product spec should be implemented as a skill, with scripts for terministic parts and simple csv and json files for data storage. The current project should contain all of the data, scripts and skills.
+
+Each coding phase should end with a set of tests, and verification.
+
+Write the tech spec to /spec/tech-spec.md
+
+# Locations
+
+/src for scripts
+/data/recipes -- stored recipes
+/data/pantry.csv -- pantry state
+/data/repeating.csv -- repeating items and cadence
+
+# Language
+
+write the scripts in Typescript
+
+# Execution Env
+
+Execute w/ nodejs
+test scripts with ViTest
+
+## Stages
+
+Set up environment
+
+Plan MVP tracer bullet
+Plan meals, collect recipe, generate de-dupped list
+
+Then plan each additional feature.
