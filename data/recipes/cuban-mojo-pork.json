@@ -1,0 +1,93 @@
+{
+  "id": "cuban-mojo-pork",
+  "name": "Cuban Mojo Pork",
+  "servings": 6,
+  "mealType": "dinner",
+  "sourceUrl": null,
+  "noRecipe": false,
+  "ingredients": [
+    {
+      "name": "garlic cloves, minced",
+      "amount": 8,
+      "unit": "clove"
+    },
+    {
+      "name": "ground cumin",
+      "amount": 2,
+      "unit": "tsp"
+    },
+    {
+      "name": "black pepper, freshly ground",
+      "amount": 2,
+      "unit": "tsp"
+    },
+    {
+      "name": "fresh oregano leaves, minced",
+      "amount": 0.25,
+      "unit": "cup"
+    },
+    {
+      "name": "orange juice",
+      "amount": 0.5,
+      "unit": "cup"
+    },
+    {
+      "name": "lime juice",
+      "amount": 0.25,
+      "unit": "cup"
+    },
+    {
+      "name": "olive oil",
+      "amount": 0.25,
+      "unit": "cup"
+    },
+    {
+      "name": "kosher salt",
+      "amount": 1,
+      "unit": "to taste"
+    },
+    {
+      "name": "boneless pork shoulder roast (6-8 lb, rind removed)",
+      "amount": 1,
+      "unit": "count"
+    },
+    {
+      "name": "fresh mint leaves, chopped",
+      "amount": 0.25,
+      "unit": "cup"
+    },
+    {
+      "name": "fresh oregano leaves, chopped",
+      "amount": 3,
+      "unit": "tbsp"
+    },
+    {
+      "name": "lime wedges",
+      "amount": 1,
+      "unit": "for serving"
+    },
+    {
+      "name": "steamed rice",
+      "amount": 1,
+      "unit": "for serving"
+    },
+    {
+      "name": "black beans",
+      "amount": 1,
+      "unit": "for serving"
+    },
+    {
+      "name": "maduros (fried sweet plantains)",
+      "amount": 1,
+      "unit": "for serving"
+    }
+  ],
+  "steps": [
+    "Combine garlic, cumin, pepper, oregano, orange juice, lime juice, and olive oil in a large bowl and whisk. Season to taste generously with salt. Transfer half of mojo to a sealed container and reserve in refrigerator. Add pork to remaining mojo and turn to coat. If desired, transfer pork and marinade to a gallon-sized zipper-lock bag and refrigerate 2 hours or up to overnight before continuing.",
+    "Adjust oven rack to lower-middle position and preheat oven to 275F (135C). Line a rimmed baking sheet with a double layer of heavy-duty aluminum foil. Place pork and juices on top and fold up foil, crimping to seal loosely but making sure there is room for air to circulate inside. Roast for 3 hours. Fold back foil, increase oven temperature to 325F (165C), and continue roasting, basting pork with pan juices occasionally, until pork shows almost no resistance when a metal skewer or knife is inserted into it and the surface is crackly and brown, 2 to 3 hours longer. Remove pork from oven and let rest 10 to 15 minutes.",
+    "Pour accumulated pork juices into a bowl and discard all except 1 cup. Add reserved mojo to pork drippings, along with fresh chopped mint and oregano. Whisk together and season to taste with salt.",
+    "Serve shredded pork, passing mint mojo and lime wedges on the side. Serve rice, beans, and plantains on the side. Reserve any leftovers for sandwiches."
+  ],
+  "createdAt": "2026-08-03",
+  "updatedAt": "2026-08-03"
+}

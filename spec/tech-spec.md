@@ -252,10 +252,10 @@ Every stage ends with Vitest unit tests plus an explicit manual verification ste
 - Verify: run the CLI against the sample recipes; hand-verify the deduped output.
 - Exit criteria: the core "plan meals → deduped list" loop works end to end with real data.
 
-**Stage 2 — SKILL.md orchestration**
+**Stage 2 — SKILL.md orchestration — ✅ Complete**
 
-- Build: `.claude/skills/plan-week/SKILL.md` wiring all prior stages into the conversational flow (§5).
-- Tests: a non-interactive Vitest "smoke test" exercising the full lib pipeline (recipes → coverage → scaling → grocery-list → cadence → pantry) against fixture data in one call, as regression insurance for the logic the skill depends on.
+- Build: `saveRecipe` added to `recipes.ts` (validate-and-persist, upsert-by-id semantics, id derived via `slugify` when not given); `load-recipes.ts` and `save-recipe.ts` CLI wrappers; `.claude/skills/plan-week/SKILL.md`, scoped to what exists after Stage 1 — confirm defaults, collect dinner recipes (reuse via `load-recipes.ts` or paste/manual entry persisted via `save-recipe.ts`), track running dinner coverage and an optional non-dinner recipe pass by calling `build-grocery-list.ts` repeatedly, then present the final merged grocery list as plain conversational text. No scaling prompts, no pantry cross-check, no repeating items, and no HTML artifact yet — §5's full 10-step flow is assembled incrementally; see the "SKILL.md:" notes on Stages 3-9 below for what each later stage adds.
+- Tests: a non-interactive Vitest "smoke test" (`src/lib/pipeline.test.ts`) chaining `loadAllRecipes` → `computeCoverage` → `mergeIngredients` against fixture data in one call, as regression insurance for the logic the skill depends on. Later stages extend this same test file to add scaling → cadence → pantry as those modules land, rather than starting a new smoke test each time.
 - Verify: run the skill in Claude Code against a real week's recipes end to end; confirm each script call and its JSON output are sane.
 - Exit criteria: a full conversational run produces a correct, sensible grocery list.
 
@@ -268,28 +268,28 @@ Every stage ends with Vitest unit tests plus an explicit manual verification ste
 
 **Stage 4 — Recipe scaling**
 
-- Build: `scaling.ts` (`scaleRecipe`, `determineScaleFactor`); wire into `build-grocery-list.ts`.
+- Build: `scaling.ts` (`scaleRecipe`, `determineScaleFactor`); wire into `build-grocery-list.ts`. SKILL.md: the per-recipe coverage check (step 2) now offers `determineScaleFactor`'s suggested multiplier whenever a slot is `"under"`, confirms with the user, and applies it via a new `scale-recipe.ts` CLI before moving to the next slot.
 - Tests: amount multiplication (including non-numeric/"to taste" ingredients handled gracefully), scale-factor suggestion for exact and non-exact multiples.
 - Verify: a 4-serving recipe with 6 eaters needed produces the expected suggested factor and correctly doubled amounts in the merged list.
 - Exit criteria: scaling affects grocery-list math correctly and is unit-tested.
 
 **Stage 5 — Unit conversion**
 
-- Build: `units.ts` (volume + weight conversion tables, `toBase`/`fromBase`, display-unit selection); upgrade `grocery-list.ts` to convert within a unit family before summing.
+- Build: `units.ts` (volume + weight conversion tables, `toBase`/`fromBase`, display-unit selection); upgrade `grocery-list.ts` to convert within a unit family before summing. SKILL.md: unchanged — `grocery-list.ts` merges more accurately under the hood with no new conversational step.
 - Tests: same-family conversion + sum (e.g. cups + pints), cross-family/unconvertible units kept separate, display-unit selection logic.
 - Verify: a recipe list containing "2 cups" and "1 pint" of the same ingredient merges into one correct line item.
 - Exit criteria: unit-aware merging is correct and unit-tested.
 
 **Stage 6 — Repeating/cadence items**
 
-- Build: `csv.ts` (generic read/write), `repeatingStore.ts`, `cadence.ts` (`isDue`/`computeDueItems`), seed `data/repeating.csv` with a starter list; extend `build-grocery-list.ts` to merge due items.
+- Build: `csv.ts` (generic read/write), `repeatingStore.ts`, `cadence.ts` (`isDue`/`computeDueItems`), seed `data/repeating.csv` with a starter list; extend `build-grocery-list.ts` to merge due items. SKILL.md: step 4 (build the final grocery list) also calls the new `due-items.ts` and merges its due repeating/cadence items into the presented list.
 - Tests: `isDue` boundary cases (blank → always due, exactly N weeks, not yet due), CSV round-trip against temp fixture files (never the real `data/` files).
 - Verify: a weekly item and an old 4-week item both appear; a recently-purchased cadence item is correctly excluded.
 - Exit criteria: repeating/cadence items merge correctly and dedup alongside recipe-derived items.
 
 **Stage 7 — Pantry cross-check**
 
-- Build: `pantryStore.ts`, `pantry.ts` (`matchAgainstPantry` — exact/partial/none tiers), `check-pantry.ts` CLI. `pantry.ts` needs the same "lowercased, trimmed, whitespace-collapsed" name normalization already implemented as the private `normalizeName` helper in `grocery-list.ts` (Stage 1) — extract it into a shared util (e.g. `src/lib/normalize.ts`) at this point rather than duplicating it. Keep `slugify` (recipes.ts) separate: it strips punctuation and hyphenates for id/filename generation, a different operation that happens to share a couple of chained string methods.
+- Build: `pantryStore.ts`, `pantry.ts` (`matchAgainstPantry` — exact/partial/none tiers), `check-pantry.ts` CLI. `pantry.ts` needs the same "lowercased, trimmed, whitespace-collapsed" name normalization already implemented as the private `normalizeName` helper in `grocery-list.ts` (Stage 1) — extract it into a shared util (e.g. `src/lib/normalize.ts`) at this point rather than duplicating it. Keep `slugify` (recipes.ts) separate: it strips punctuation and hyphenates for id/filename generation, a different operation that happens to share a couple of chained string methods. SKILL.md: adds a pantry cross-check step after the grocery list is built, calling `check-pantry.ts` and presenting flagged items for the user to confirm/skip, never silently removing anything.
 - Tests: exact match, case/whitespace-insensitive match, partial/substring tier, no match; pantry CSV round-trip.
 - Verify: seed `pantry.csv` with overlapping items, confirm correct tier annotations without items being silently removed.
 - Exit criteria: pantry annotations are correct and non-destructive.
@@ -303,7 +303,7 @@ Every stage ends with Vitest unit tests plus an explicit manual verification ste
 
 **Stage 9 — Recurring-item detection**
 
-- Build: `history.ts` (`appendWeekRecord`, `detectRecurringCandidates`), `detect-recurring.ts` CLI, wire `append-history.ts` into the finalize step.
+- Build: `history.ts` (`appendWeekRecord`, `detectRecurringCandidates`), `detect-recurring.ts` CLI, wire `append-history.ts` into the finalize step. SKILL.md: the finalize step calls `detect-recurring.ts` and offers to add any candidates to `repeating.csv` via `update-repeating.ts`.
 - Tests: item appearing in ≥3 of the last 4 weeks is flagged; item already in `repeating.csv` is excluded; item below threshold is not flagged; `appendWeekRecord` appends correctly without corrupting the file.
 - Verify: simulate a few weeks of `history.json` with a recurring non-repeating item, run detection, confirm it's flagged and the skill offers to add it.
 - Exit criteria: detection is correct and integrated into the weekly flow.

@@ -1,10 +1,5 @@
-export type MealType =
-  | "dinner"
-  | "breakfast"
-  | "lunch"
-  | "dessert"
-  | "side"
-  | "other";
+export const MEAL_TYPES = ["dinner", "breakfast", "lunch", "dessert", "side", "other"] as const;
+export type MealType = (typeof MEAL_TYPES)[number];
 
 export interface Ingredient {
   name: string;

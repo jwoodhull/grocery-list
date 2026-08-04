@@ -3,7 +3,16 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Recipe } from "../types/index.js";
-import { RecipeLoadError, RecipeNotFoundError, loadAllRecipes, loadRecipe, slugify } from "./recipes.js";
+import {
+  RecipeLoadError,
+  RecipeNotFoundError,
+  RecipeValidationError,
+  loadAllRecipes,
+  loadRecipe,
+  saveRecipe,
+  slugify,
+} from "./recipes.js";
+import { writeRecipe } from "./test-support.js";
 
 const pasta1: Recipe = {
   id: "pasta-1",
@@ -52,10 +61,6 @@ const chickenTacos: Recipe = {
   createdAt: "2026-08-01",
   updatedAt: "2026-08-01",
 };
-
-function writeRecipe(dir: string, recipe: Recipe): void {
-  fs.writeFileSync(path.join(dir, `${recipe.id}.json`), JSON.stringify(recipe));
-}
 
 describe("slugify", () => {
   it("lowercases and hyphenates a simple name", () => {
@@ -154,5 +159,105 @@ describe("loadRecipe", () => {
   it("throws a clear RecipeLoadError on malformed JSON, not a raw SyntaxError", () => {
     fs.writeFileSync(path.join(tmpDir, "broken.json"), "{ not valid json");
     expect(() => loadRecipe("broken", tmpDir)).toThrow(RecipeLoadError);
+  });
+});
+
+describe("saveRecipe", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "recipes-test-"));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  const validInput = {
+    name: "Test Soup",
+    servings: 4,
+    mealType: "dinner" as const,
+    ingredients: [{ name: "broth", amount: 4, unit: "cup" }],
+  };
+
+  it("derives id from slugify(name) and sets both timestamps to today when new", () => {
+    const saved = saveRecipe(validInput, tmpDir, "2026-08-03");
+    expect(saved.id).toBe("test-soup");
+    expect(saved.createdAt).toBe("2026-08-03");
+    expect(saved.updatedAt).toBe("2026-08-03");
+    expect(saved.sourceUrl).toBeNull();
+    expect(saved.noRecipe).toBe(false);
+    expect(saved.steps).toEqual([]);
+    expect(loadRecipe("test-soup", tmpDir)).toEqual(saved);
+  });
+
+  it("honors an explicit id instead of deriving one", () => {
+    const saved = saveRecipe({ ...validInput, id: "custom-id" }, tmpDir, "2026-08-03");
+    expect(saved.id).toBe("custom-id");
+    expect(loadRecipe("custom-id", tmpDir)).toEqual(saved);
+  });
+
+  it("preserves createdAt and bumps updatedAt when re-saving an existing id", () => {
+    saveRecipe(validInput, tmpDir, "2026-08-01");
+    const updated = saveRecipe({ ...validInput, servings: 6 }, tmpDir, "2026-08-03");
+    expect(updated.createdAt).toBe("2026-08-01");
+    expect(updated.updatedAt).toBe("2026-08-03");
+    expect(updated.servings).toBe(6);
+  });
+
+  it("throws RecipeValidationError for an empty name", () => {
+    expect(() => saveRecipe({ ...validInput, name: "  " }, tmpDir)).toThrow(RecipeValidationError);
+    expect(() => saveRecipe({ ...validInput, name: "  " }, tmpDir)).toThrow(/name/);
+  });
+
+  it("throws RecipeValidationError for a non-positive servings", () => {
+    expect(() => saveRecipe({ ...validInput, servings: 0 }, tmpDir)).toThrow(/servings/);
+    expect(() => saveRecipe({ ...validInput, servings: -2 }, tmpDir)).toThrow(RecipeValidationError);
+  });
+
+  it("throws RecipeValidationError for an invalid mealType", () => {
+    // @ts-expect-error - intentionally invalid for the test
+    expect(() => saveRecipe({ ...validInput, mealType: "brunch" }, tmpDir)).toThrow(/mealType/);
+  });
+
+  it("throws RecipeValidationError for an empty ingredients array", () => {
+    expect(() => saveRecipe({ ...validInput, ingredients: [] }, tmpDir)).toThrow(/ingredients/);
+  });
+
+  it("throws RecipeValidationError for an ingredient with an empty name", () => {
+    expect(() =>
+      saveRecipe({ ...validInput, ingredients: [{ name: "", amount: 1, unit: "cup" }] }, tmpDir),
+    ).toThrow(/ingredients\[0\]\.name/);
+  });
+
+  it("throws RecipeValidationError for a negative ingredient amount", () => {
+    expect(() =>
+      saveRecipe({ ...validInput, ingredients: [{ name: "broth", amount: -1, unit: "cup" }] }, tmpDir),
+    ).toThrow(/ingredients\[0\]\.amount/);
+  });
+
+  it("throws RecipeValidationError for an ingredient with an empty unit", () => {
+    expect(() =>
+      saveRecipe({ ...validInput, ingredients: [{ name: "broth", amount: 1, unit: "" }] }, tmpDir),
+    ).toThrow(/ingredients\[0\]\.unit/);
+  });
+
+  it("defaults today to the local date, not the UTC date", () => {
+    const saved = saveRecipe(validInput, tmpDir);
+    const now = new Date();
+    const expected = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    expect(saved.createdAt).toBe(expected);
+  });
+
+  it.each(["", "..", ".", "../evil", "sub/evil"])("rejects an unsafe id %j", (id) => {
+    expect(() => saveRecipe({ ...validInput, id }, tmpDir)).toThrow(RecipeValidationError);
+    expect(fs.existsSync(path.join(tmpDir, "..", "evil.json"))).toBe(false);
+  });
+
+  it("treats a corrupted existing file as new rather than blocking the overwrite", () => {
+    fs.writeFileSync(path.join(tmpDir, "test-soup.json"), JSON.stringify({ ...pasta1, id: "wrong-id" }));
+    const saved = saveRecipe(validInput, tmpDir, "2026-08-03");
+    expect(saved.createdAt).toBe("2026-08-03");
+    expect(loadRecipe("test-soup", tmpDir)).toEqual(saved);
   });
 });

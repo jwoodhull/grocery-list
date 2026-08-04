@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Stage 1 (MVP tracer bullet) is complete: recipes load from `data/recipes/*.json`, `build-grocery-list.ts` merges their ingredients (exact name+unit dedup only) and reports dinner-coverage against eaters/dinners needed. No skill, pantry, repeating items, scaling, or unit conversion yet. The full staged build plan and current stage is tracked in `spec/tech-spec.md` §6; work proceeds stage by stage from there.
+Stage 2 (SKILL.md orchestration) is complete: `.claude/skills/plan-week/SKILL.md` runs the conversational "plan dinners → get a grocery list" flow, calling `load-recipes.ts`/`save-recipe.ts` (recipe reuse and persistence) and `build-grocery-list.ts` (coverage + exact-match merge) from Stage 1. Still no pantry, repeating items, scaling, unit conversion, or HTML artifact — the grocery list is presented as plain text. The full staged build plan and current stage is tracked in `spec/tech-spec.md` §6; work proceeds stage by stage from there.
 
 ## Implementation approach
 
-Decided (see `spec/tech-spec.md` for the full rationale, schemas, and module boundaries): a **Claude Code skill** (`.claude/skills/plan-week/`, not yet built) backed by deterministic, unit-tested TypeScript under `/src`. Judgment calls (recipe-text parsing, conversational flow, HTML artifact composition) stay in the skill's `SKILL.md`; deterministic logic (dedup, scaling, unit conversion, cadence math, pantry matching) lives in tested `/src/lib` functions with thin `/src/cli` wrappers. Storage is plain CSV/JSON under `/data` — no database, no server, no auth.
+Decided (see `spec/tech-spec.md` for the full rationale, schemas, and module boundaries): a **Claude Code skill** (`.claude/skills/plan-week/`) backed by deterministic, unit-tested TypeScript under `/src`. Judgment calls (recipe-text parsing, conversational flow, HTML artifact composition) stay in the skill's `SKILL.md`; deterministic logic (dedup, scaling, unit conversion, cadence math, pantry matching) lives in tested `/src/lib` functions with thin `/src/cli` wrappers. Storage is plain CSV/JSON under `/data` — no database, no server, no auth.
 
 ## Commands
 
