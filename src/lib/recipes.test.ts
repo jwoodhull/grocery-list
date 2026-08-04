@@ -215,6 +215,11 @@ describe("saveRecipe", () => {
     expect(() => saveRecipe({ ...validInput, servings: -2 }, tmpDir)).toThrow(RecipeValidationError);
   });
 
+  it("throws RecipeValidationError for a non-finite servings", () => {
+    expect(() => saveRecipe({ ...validInput, servings: NaN }, tmpDir)).toThrow(/servings/);
+    expect(() => saveRecipe({ ...validInput, servings: Infinity }, tmpDir)).toThrow(/servings/);
+  });
+
   it("throws RecipeValidationError for an invalid mealType", () => {
     // @ts-expect-error - intentionally invalid for the test
     expect(() => saveRecipe({ ...validInput, mealType: "brunch" }, tmpDir)).toThrow(/mealType/);
@@ -234,6 +239,20 @@ describe("saveRecipe", () => {
     expect(() =>
       saveRecipe({ ...validInput, ingredients: [{ name: "broth", amount: -1, unit: "cup" }] }, tmpDir),
     ).toThrow(/ingredients\[0\]\.amount/);
+  });
+
+  it("throws RecipeValidationError for a non-finite ingredient amount", () => {
+    expect(() =>
+      saveRecipe({ ...validInput, ingredients: [{ name: "broth", amount: NaN, unit: "cup" }] }, tmpDir),
+    ).toThrow(/ingredients\[0\]\.amount/);
+  });
+
+  it("accepts a zero ingredient amount (e.g. 'to taste')", () => {
+    const saved = saveRecipe(
+      { ...validInput, ingredients: [{ name: "salt", amount: 0, unit: "to taste" }] },
+      tmpDir,
+    );
+    expect(saved.ingredients).toEqual([{ name: "salt", amount: 0, unit: "to taste" }]);
   });
 
   it("throws RecipeValidationError for an ingredient with an empty unit", () => {

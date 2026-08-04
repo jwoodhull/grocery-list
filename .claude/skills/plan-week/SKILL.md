@@ -9,10 +9,12 @@ Runs the "plan dinners for the week → get a grocery list" conversation, callin
 the deterministic scripts under `src/cli/` via the Bash tool and reasoning over
 their JSON output.
 
-**Current scope:** recipe collection/reuse, dinner-coverage tracking, and
-exact-match grocery-list merging. No recipe scaling, no unit conversion, no
-pantry cross-check, and no repeating/cadence items. The final grocery list
-is presented as plain conversational text, not an HTML artifact.
+**Current scope:** recipe collection/reuse, dinner-coverage tracking,
+exact-match grocery-list merging, conversational review/edit, and an HTML
+artifact for the final meal plan + grocery list. No recipe scaling, no unit
+conversion, no pantry cross-check, and no repeating/cadence items — so every
+grocery item is categorized by judgment (none are sourced from a repeating
+list yet) and no item is ever marked as a repeat.
 
 Every script prints one JSON object to stdout and exits non-zero with a
 stderr message on error — if a call fails, read the stderr message and either
@@ -24,6 +26,8 @@ Ask the user, offering the defaults as the easy "just go" answer:
 - Dinners needed this week (default **6**)
 - Eaters per dinner (default **2**)
 - Any non-dinner recipes to add this week (breakfast/lunch/dessert/side)? Default **no**.
+- Which week this is for (`weekOf`) — default to today's date unless the user
+  specifies a different week.
 
 ## 2. Collect dinner recipes
 
@@ -84,10 +88,48 @@ Use this call's `groceryList` as the final merged ingredient list. Ignore
 its `coverage` field if extras were included — mixing in non-dinner recipes
 skews the coverage math, which was already established correctly in step 2.
 
-## 5. Present results
+## 5. Review the grocery list
 
-Summarize conversationally, as plain text (no HTML artifact yet):
-- The recipes selected for the week (dinners, then any extras), noting which
-  were newly saved to the recipe library for future reuse.
-- The dinner-coverage summary from step 2.
-- The final deduplicated grocery list from step 4.
+Present the merged grocery list from step 4 conversationally (plain text is
+fine here — this is a working draft, not the final artifact). Let the user
+add, remove, or adjust items directly; these are plain conversational edits
+to the in-memory list, not a script call. Loop until the user confirms the
+list is right.
+
+## 6. Categorize
+
+For every item in the confirmed list, assign a `category` — one of `dairy`,
+`meat`, `produce`, `pantry`, `household` — by your own judgment (these match
+the display groups Dairy, Meat, Fresh Fruit & Veg, Dry Pantry Items,
+Household Goods). Leave `isRepeat` unset; nothing is sourced from a
+repeating list yet, so it's always falsy until a later stage wires that in.
+
+## 7. Finalize
+
+Write the payload — `{"weekOf": "<weekOf>", "mealPlan": <recipes array from
+step 4, now including mealType>, "groceryList": <categorized items from step
+6>}` — to a scratch JSON file (e.g. via the Write tool), then call
+`finalize-list.ts` with `--dataFile`:
+
+```
+npx tsx src/cli/finalize-list.ts --dataFile <path to the scratch file>
+```
+
+Passing the payload via a file rather than inlining it as a `--data '<json>'`
+shell argument avoids shell-quoting breakage on recipe/item names containing
+an apostrophe (e.g. "Shepherd's Pie"). If the call errors, the stderr
+message names the offending field — fix the data and retry rather than
+guessing. On success, use its `groupedGroceryList` (five categories, fixed
+order, empty categories already omitted) for the artifact.
+
+## 8. Generate the HTML artifact
+
+Load the `artifact-design` skill first, then use the Artifact tool to
+publish a page titled e.g. "Grocery List — Week of `<weekOf>`" (favicon 🛒)
+containing:
+- The meal plan: recipes selected for the week (dinners, then any extras),
+  noting which were newly saved to the recipe library for future reuse, and
+  the dinner-coverage summary from step 2.
+- The grocery list, rendered from `groupedGroceryList`, in its given
+  category order, each item showing a small repeat badge/icon when
+  `isRepeat` is true (nothing will show one yet — that's expected).

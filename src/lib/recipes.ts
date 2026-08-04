@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { MEAL_TYPES, type Ingredient, type MealType, type Recipe } from "../types/index.js";
+import { isFiniteNumber, isNonEmptyString } from "./validation.js";
 
 export const DEFAULT_RECIPES_DIR = path.join(process.cwd(), "data", "recipes");
 
@@ -105,7 +106,7 @@ export interface NewRecipeInput {
 }
 
 function requireNonEmpty(value: string | undefined, label: string): void {
-  if (!value || value.trim().length === 0) {
+  if (!isNonEmptyString(value)) {
     throw new RecipeValidationError(`${label} must not be empty`);
   }
 }
@@ -131,7 +132,7 @@ function localDateString(date: Date = new Date()): string {
 
 function validateNewRecipeInput(input: NewRecipeInput): void {
   requireNonEmpty(input.name, "name");
-  if (!Number.isFinite(input.servings) || input.servings <= 0) {
+  if (!isFiniteNumber(input.servings) || input.servings <= 0) {
     throw new RecipeValidationError(`servings must be a positive number, got ${input.servings}`);
   }
   if (!MEAL_TYPES.includes(input.mealType)) {
@@ -142,7 +143,7 @@ function validateNewRecipeInput(input: NewRecipeInput): void {
   }
   input.ingredients.forEach((ingredient, i) => {
     requireNonEmpty(ingredient.name, `ingredients[${i}].name`);
-    if (!Number.isFinite(ingredient.amount) || ingredient.amount < 0) {
+    if (!isFiniteNumber(ingredient.amount) || ingredient.amount < 0) {
       throw new RecipeValidationError(`ingredients[${i}].amount must be a non-negative number, got ${ingredient.amount}`);
     }
     requireNonEmpty(ingredient.unit, `ingredients[${i}].unit`);

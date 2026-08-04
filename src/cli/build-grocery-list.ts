@@ -3,10 +3,11 @@ import { computeCoverage } from "../lib/servings.js";
 import { mergeIngredients } from "../lib/grocery-list.js";
 import { loadRecipe } from "../lib/recipes.js";
 import type { Recipe } from "../types/index.js";
+import { parseNumberArg, runCli } from "./util.js";
 
 const USAGE = "Usage: build-grocery-list.ts --recipe <id> [--recipe <id> ...] [--dinners <n>] [--eaters <n>]";
 
-try {
+runCli(() => {
   const { values } = parseArgs({
     options: {
       recipe: { type: "string", multiple: true },
@@ -20,17 +21,8 @@ try {
     process.exit(1);
   }
 
-  const dinnersNeeded = Number(values.dinners ?? "6");
-  const eatersPerDinner = Number(values.eaters ?? "2");
-
-  if (!Number.isFinite(dinnersNeeded)) {
-    console.error(`Error: --dinners must be a number, got "${values.dinners}"`);
-    process.exit(1);
-  }
-  if (!Number.isFinite(eatersPerDinner)) {
-    console.error(`Error: --eaters must be a number, got "${values.eaters}"`);
-    process.exit(1);
-  }
+  const dinnersNeeded = parseNumberArg("dinners", values.dinners ?? "6");
+  const eatersPerDinner = parseNumberArg("eaters", values.eaters ?? "2");
 
   const recipes: Recipe[] = values.recipe.map((id: string): Recipe => loadRecipe(id));
 
@@ -44,12 +36,9 @@ try {
 
   console.log(
     JSON.stringify({
-      recipes: recipes.map((r) => ({ id: r.id, name: r.name, servings: r.servings })),
+      recipes: recipes.map((r) => ({ id: r.id, name: r.name, servings: r.servings, mealType: r.mealType })),
       coverage,
       groceryList,
     }),
   );
-} catch (err) {
-  console.error(`Error: ${(err as Error).message}`);
-  process.exit(1);
-}
+});
