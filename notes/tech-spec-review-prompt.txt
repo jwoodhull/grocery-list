@@ -1,0 +1,8 @@
+working on @spec/tech-spec.md
+
+I reorder the stages, so that after the tracer bullet with just scripts, we build the skill, then html output.
+
+The Html output needs some clarification
+
+- Sort the list with item type: Dairy, Meat, Fresh fruit and Veg, dry pantry items, and lastly household goods, e.g. dish soap
+- Mark repeates

@@ -1,0 +1,1 @@
+we are working on the grocery list tool, plan the next stage, html artifact.  use tdd
